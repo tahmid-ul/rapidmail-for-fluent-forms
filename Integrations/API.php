@@ -28,10 +28,21 @@ class API {
         $response = wp_remote_get($url, $args);
         $code = wp_remote_retrieve_response_code($response);
 
-        if($code != 200){
-            return false;
+        if (!$response) {
+            return new \WP_Error('invalid', 'Request could not be performed');
         }
-        return true;
+
+        if ($code != 200) {
+            $message = wp_remote_retrieve_response_message($response);
+            if($code == '401') {
+                $message = 'API credentials are not correct';
+            }
+            return new \WP_Error('invalid', "An error occured: {$message}");
+        }
+
+        if (is_wp_error($response)) {
+            return new \WP_Error('wp_error', $response->get_error_message());
+        }
     }
 
     public function getRecipientLists() {
@@ -69,7 +80,7 @@ class API {
             return new \WP_Error('error', $response->errors);
         }
 
-        if ($response['contact']["id"]) {
+        if ($response['contact']['id']) {
             return $response;
         }
 
