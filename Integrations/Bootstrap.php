@@ -47,7 +47,16 @@ class Bootstrap extends IntegrationManager {
                     'label' => 'Rapidmail API Password'
                 ],
             ],
-            'hide_on_valid' => true
+            'hide_on_valid' => true,
+	        'discard_settings' => [
+		        'section_description' => 'Your Rapidmail API integration is up and running',
+		        'button_text'         => 'Disconnect Rapidmail',
+		        'data'                => [
+			        'username' => '',
+			        'password' => ''
+		        ],
+		        'show_verify'         => true
+	        ]
         ];
     }
 
@@ -59,6 +68,7 @@ class Bootstrap extends IntegrationManager {
         $defaults = [
             'username' => '',
             'password' => '',
+	        'status'   => ''
         ];
 
         return wp_parse_args($globalSettings, $defaults);
@@ -80,22 +90,44 @@ class Bootstrap extends IntegrationManager {
         }
 
         // Verify API key now
-        $oldSettings = $this->getGlobalSettings([]);
-        $oldSettings['username'] = sanitize_text_field($settings['username']);
-        $oldSettings['password'] = sanitize_text_field($settings['password']);
-        $oldSettings['status'] = false;
-        $api = $this->getRemoteClient();
-        $testCredentials = $api->testCredentials($settings['username'], $settings['password']);
-        if($testCredentials) {
-            update_option($this->optionKey, $oldSettings, 'no');
-            wp_send_json_success([
-                'message' => 'API key is valid'
-            ], 200);
-        } else {
-            wp_send_json_error([
-                'message' => 'Credentials are wrong'
-            ], 400);
-        }
+	    try {
+		    $integrationSettings = [
+			    'username' => sanitize_text_field($settings['username']),
+			    'password' => sanitize_text_field($settings['password']),
+			    'status' => false
+		    ];
+
+		    update_option($this->optionKey, $integrationSettings, 'no');
+
+		    $api = $this->getRemoteClient();
+		    $testCredentials = $api->testCredentials($settings['username'], $settings['password']);
+
+		    if (is_wp_error($testCredentials)) {
+			    throw new \Exception($testCredentials->get_error_message());
+		    }
+
+		    if (!empty($testCredentials['error']['message'])) {
+			    throw new \Exception($testCredentials['error']['message']);
+		    }
+
+	    } catch (\Exception $exception) {
+		    wp_send_json_error([
+			    'message' => $exception->getMessage()
+		    ], 400);
+	    }
+
+	    $integrationSettings = [
+		    'username' => sanitize_text_field($settings['username']),
+		    'password' => sanitize_text_field($settings['password']),
+		    'status' => true
+	    ];
+
+	    update_option($this->optionKey, $integrationSettings, 'no');
+
+	    wp_send_json_success([
+		    'message' => __('Your Rapidmail API key is valid', 'fluentformpro'),
+		    'status' => true
+	    ], 200);
     }
 
     public function pushIntegration($integrations, $formId) {
