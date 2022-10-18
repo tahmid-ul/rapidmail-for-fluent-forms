@@ -29,8 +29,8 @@ class Bootstrap extends IntegrationManager {
             'logo' => $this->logo,
             'menu_title' => 'Rapidmail Settings',
             'menu_description' => $this->description,
-            'valid_message' => 'Your Rapidmail Credentials are valid',
-            'invalid_message' => 'Your Rapidmail Credentials are not valid',
+            'valid_message' => 'Your Rapidmail credentials are valid',
+            'invalid_message' => 'Your Rapidmail credentials are not set yet',
             'save_button_text' => 'Save Settings',
             'config_instruction' => 'Enter your Rapidmail API credentials',
             'fields' => [
@@ -125,7 +125,7 @@ class Bootstrap extends IntegrationManager {
 	    update_option($this->optionKey, $integrationSettings, 'no');
 
 	    wp_send_json_success([
-		    'message' => __('Your Rapidmail API key is valid', 'fluentformpro'),
+		    'message' => __('Your Rapidmail credentials are valid', 'fluentformpro'),
 		    'status' => true
 	    ], 200);
     }
@@ -137,8 +137,8 @@ class Bootstrap extends IntegrationManager {
             'is_active' => $this->isConfigured(),
             'configure_title' => 'Configuration required!',
             'global_configure_url' => admin_url('admin.php?page=fluent_forms_settings#general-rapidmail-settings'),
-            'configure_message' => 'Rapidmail is not configured yet! Please configure your Rapidmail api first',
-            'configure_button_text' => 'Set Rapidmail'
+            'configure_message' => 'Rapidmail is not configured yet! Please configure your Rapidmail credentials first',
+            'configure_button_text' => 'Configure Rapidmail integration'
         ];
         return $integrations;
     }
@@ -185,11 +185,11 @@ class Bootstrap extends IntegrationManager {
                         ],
                         [
                             'key' => 'first_name',
-                            'label' => 'First Name',
+                            'label' => 'First Name'
                         ],
                         [
                             'key' => 'last_name',
-                            'label' => 'Last Name',
+                            'label' => 'Last Name'
                         ]
                     ]
                 ],
@@ -243,15 +243,16 @@ class Bootstrap extends IntegrationManager {
      */
     public function notify($feed, $formData, $entry, $form) {
         $data = $feed['processedValues'];
-        $contact = Arr::only($data, ['first_name', 'last_name', 'email']);
 
-        if (!is_email($contact['email'])) {
-            $contact['email'] = Arr::get($formData, $contact['email']);
+        if (!is_email($data['fieldEmailAddress'])) {
+            $data['fieldEmailAddress'] = ArrayHelper::get($formData, $data['fieldEmailAddress']);
         }
 
-        if (!is_email($contact['fieldEmailAddress'])) {
+        if (!is_email($data['fieldEmailAddress'])) {
             return false;
         }
+
+        $contact = Arr::only($data, ['first_name', 'last_name', 'email']);
 
         $send_confirmation_email = Arr::isTrue($data, 'send_confirmation_email');
         $list = Arr::get($data, 'list_id');
@@ -268,14 +269,6 @@ class Bootstrap extends IntegrationManager {
             }
             do_action('ff_integration_action_result', $feed, 'failed', $message);
         }
-    }
-
-    public function isConfigured() {
-        return true;
-    }
-
-    public function isEnabled() {
-        return true;
     }
 
     protected function addLog($title, $status, $description, $formId, $entryId) {
