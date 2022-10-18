@@ -21,7 +21,7 @@ class Bootstrap extends IntegrationManager {
         $this->description = 'Connect Rapidmail with WP Fluent Forms and subscribe a contact when a form is submitted.';
         $this->registerAdminHooks();
 
-        add_filter('fluentform_notifying_async_rapidmail', '__return_false');
+        //add_filter('fluentform_notifying_async_rapidmail', '__return_false');
     }
 
     public function getGlobalFields($fields) {
@@ -136,6 +136,30 @@ class Bootstrap extends IntegrationManager {
                     'required' => true,
                     'placeholder' => 'Your Feed Name',
                     'component' => 'text'
+                ],
+                [
+                    'key' => 'fields',
+                    'label' => 'Map Fields',
+                    'tips' => 'Select which Fluent Form fields pair with their<br /> respective Rapidmail fields.',
+                    'component' => 'map_fields',
+                    'field_label_remote' => 'Rapidmail Fields',
+                    'field_label_local' => 'Form Field',
+                    'primary_fileds' => [
+                        [
+                            'key' => 'email',
+                            'label' => 'Email Address',
+                            'required' => true,
+                            'input_options' => 'emails'
+                        ],
+                        [
+                            'key' => 'first_name',
+                            'label' => 'First Name',
+                        ],
+                        [
+                            'key' => 'last_name',
+                            'label' => 'Last Name',
+                        ]
+                    ]
                 ],
                 [
                     'key' => 'list_id',
