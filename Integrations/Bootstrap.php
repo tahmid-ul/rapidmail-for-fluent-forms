@@ -149,10 +149,10 @@ class Bootstrap extends IntegrationManager {
             'username' => '',
             'password' => '',
             'list_id' => '',
-            'send_confirmation_email' => false,
+            'send_confirmation_email' => true,
             'conditionals' => [
                 'conditions' => [],
-                'status' => true,
+                'status' => false,
                 'type' => 'all'
             ],
             'enabled' => true
@@ -244,30 +244,29 @@ class Bootstrap extends IntegrationManager {
     public function notify($feed, $formData, $entry, $form) {
         $data = $feed['processedValues'];
 
-        if (!is_email($data['fieldEmailAddress'])) {
-            $data['fieldEmailAddress'] = ArrayHelper::get($formData, $data['fieldEmailAddress']);
+        $contact = Arr::only($data, ['first_name', 'last_name', 'email']);
+        if (!is_email($contact['email'])) {
+            $contact['email'] = Arr::get($formData, $data['email']);
         }
 
-        if (!is_email($data['fieldEmailAddress'])) {
+        if (!is_email($contact['email'])) {
             return false;
         }
 
-        $contact = Arr::only($data, ['first_name', 'last_name', 'email']);
-
-        $send_confirmation_email = Arr::isTrue($data, 'send_confirmation_email');
+        $send_confirmation_email = Arr::isTrue($data, 'send_confirmation_email') ? 'yes' : 'no';
         $list = Arr::get($data, 'list_id');
 
         $api = $this->getRemoteClient();
         $response = $api->subscribe($list, $contact['email'], $contact['first_name'], $contact['last_name'], $send_confirmation_email);
-        
-        if ($response == true) {
-            do_action('ff_integration_action_result', $feed, 'success', 'Rapidmail feed has been successfully initialed and pushed data');
-        } else {
+
+        if (is_wp_error($response)) {
             $message = 'Rapidmail feed has been failed to deliver feed';
             if (is_wp_error($response)) {
                 $message = $response->get_error_message();
             }
             do_action('ff_integration_action_result', $feed, 'failed', $message);
+        } else {
+            do_action('ff_integration_action_result', $feed, 'success', 'Rapidmail feed has been successfully initialed and pushed data');
         }
     }
 

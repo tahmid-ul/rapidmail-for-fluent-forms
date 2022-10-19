@@ -88,18 +88,20 @@ class API {
     }
 
     public function makeRequest($endpoint, $data = array(), $method = 'GET') {
-        $args = array(
+        $header = array(
             'headers' => array(
-                'Authorization' => 'Basic ' . base64_encode( $this->username . ':' . $this->password )
+                'Authorization' => 'Basic ' . base64_encode( $this->username . ':' . $this->password ),
+                'content-type' => 'application/json'
             )
         );
         $url = $this->apiUrl.$endpoint;
 
         if ($method == 'GET') {
-            $url = add_query_arg($data, $url);
-            $response = wp_remote_get($url, $args);
+            $response = wp_remote_get($url, $header);
         } else if ($method == 'POST') {
-            $response = wp_remote_post($url, $data);
+            $args = array_merge($header, $data);
+            $args['body'] = json_encode($args['body']);
+            $response = wp_remote_post($url, $args);
         }
 
         $code = wp_remote_retrieve_response_code($response);
@@ -108,8 +110,9 @@ class API {
         }
 
         if ($code != 200) {
-            $message = wp_remote_retrieve_response_message($response);
-            return new \WP_Error('invalid', $message);
+            $body = wp_remote_retrieve_body( $response );
+            $body = json_decode($body);
+            return new \WP_Error('invalid', $body->detail);
         }
 
         if (is_wp_error($response)) {
