@@ -77,14 +77,14 @@ class API {
         $response = $this->makeRequest('/recipients', $subscriber, 'POST');
 
         if (is_wp_error($response)) {
-            return new \WP_Error('error', $response->errors);
-        }
-
-        if ($response['contact']['id']) {
             return $response;
         }
 
-        return new \WP_Error('error', $response->errors);    
+        if ($response['email'] == $email) {
+            return true;
+        }
+
+        return new \WP_Error('error', $response->errors);
     }
 
     public function makeRequest($endpoint, $data = array(), $method = 'GET') {
@@ -105,14 +105,15 @@ class API {
         }
 
         $code = wp_remote_retrieve_response_code($response);
+
         if (!$response) {
             return new \WP_Error('invalid', 'Request could not be performed');
         }
 
-        if ($code != 200) {
+        if ($code != 200 && $code != 201) {
             $body = wp_remote_retrieve_body( $response );
             $body = json_decode($body);
-            return new \WP_Error('invalid', $body->detail);
+            return new \WP_Error('wp_error', $body->detail);
         }
 
         if (is_wp_error($response)) {
@@ -120,7 +121,7 @@ class API {
         }
 
         $body = wp_remote_retrieve_body($response);
-        $body = \json_decode($body, true);
+        $body = json_decode($body, true);
 
         return $body;
     }
