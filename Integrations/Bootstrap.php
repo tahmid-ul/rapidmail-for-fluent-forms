@@ -20,8 +20,6 @@ class Bootstrap extends IntegrationManager {
         $this->logo = FFRAPIDMAIL_URL . 'assets/rapidmail.png';
         $this->description = 'Connect Rapidmail with WP Fluent Forms and subscribe a contact when a form is submitted.';
         $this->registerAdminHooks();
-
-        //add_filter('fluentform_notifying_async_rapidmail', '__return_false');
     }
 
     public function getGlobalFields($fields) {

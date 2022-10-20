@@ -105,11 +105,12 @@ class API {
         }
 
         $code = wp_remote_retrieve_response_code($response);
+
         if (!$response) {
             return new \WP_Error('invalid', 'Request could not be performed');
         }
 
-        if ($code != 200) {
+        if ($code != 200 || $code != 201) {
             $body = wp_remote_retrieve_body( $response );
             $body = json_decode($body);
             return new \WP_Error('invalid', $body->detail);
@@ -120,7 +121,7 @@ class API {
         }
 
         $body = wp_remote_retrieve_body($response);
-        $body = \json_decode($body, true);
+        $body = json_decode($body, true);
 
         return $body;
     }
