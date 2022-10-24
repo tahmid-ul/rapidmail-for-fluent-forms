@@ -257,14 +257,14 @@ class Bootstrap extends IntegrationManager {
         $api = $this->getRemoteClient();
         $response = $api->subscribe($list, $contact['email'], $contact['first_name'], $contact['last_name'], $send_confirmation_email);
 
-        if (is_wp_error($response)) {
+        if ($response === TRUE) {
+            do_action('ff_integration_action_result', $feed, 'success', 'Rapidmail feed has been successfully initialed and pushed data');
+        } else {
             $message = 'Rapidmail feed has been failed to deliver feed';
             if (is_wp_error($response)) {
                 $message = $response->get_error_message();
             }
             do_action('ff_integration_action_result', $feed, 'failed', $message);
-        } else {
-            do_action('ff_integration_action_result', $feed, 'success', 'Rapidmail feed has been successfully initialed and pushed data');
         }
     }
 
